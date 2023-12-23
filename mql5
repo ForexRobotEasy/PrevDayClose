@@ -1,0 +1,142 @@
+
+//+------------------------------------------------------------------+
+//|                                              PrevDayClose.mq5    |
+//|                      Copyright 2022, Forex Robot Easy Team      |
+//|                                          https://forexroboteasy.com |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//|                                                                   |
+//|                Terms of Reference for Writing Code                |
+//|               for Product PrevDayClose                              |
+//|                                                                   |
+//| 1. Develop a Forex market analysis tool named PrevDayClose         |
+//|    that uses the closing price of the previous day to predict     |
+//|    market trends.                                                 |
+//|                                                                   |
+//| 2. The software should utilize the closing price of the previous  |
+//|    day's trade to draw a horizontal line, which will serve as a    |
+//|    benchmark for market direction.                                |
+//|                                                                   |
+//| 3. The PrevDayClose tool should be flexible and user-friendly,    |
+//|    allowing users to select timeframes and draw lines to the      |
+//|    close prices of the previous day.                              |
+//|                                                                   |
+//| 4. The software should provide users with a clear picture of the  |
+//|    market's direction at any given moment, which is crucial for    |
+//|    profitable currency trading.                                   |
+//|                                                                   |
+//| 5. The code should include necessary trading functions to          |
+//|    implement the PrevDayClose algorithm.                          |
+//|                                                                   |
+//| Note: The terms of reference should only include code             |
+//| requirements and specifications for developing the necessary     |
+//| features. No additional text or requirements should be included.  |
+//| The size should be limited to 1500-2000 characters.               |
+//|                                                                   |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//|                           PrevDayClose                            |
+//|                                                                   |
+//|  This program analyzes the Forex market using the closing price   |
+//|  of the previous day to predict market trends. It draws a         |
+//|  horizontal line at the closing price, which serves as a          |
+//|  benchmark for market direction.                                  |
+//|                                                                   |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//|                            Indicators                             |
+//|                                                                   |
+//+------------------------------------------------------------------+
+#property indicator_chart_window
+#property indicator_buffers 1
+#property indicator_color1 Blue
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//|                          Input parameters                        |
+//|                                                                   |
+//+------------------------------------------------------------------+
+input ENUM_TIMEFRAMES Timeframe = PERIOD_D1; // Default timeframe is Daily
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//|                          Global variables                        |
+//|                                                                   |
+//+------------------------------------------------------------------+
+double prevDayCloseBuffer[]; // Buffer to store the previous day's closing price
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//|                        Custom indicator                          |
+//|                                                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Define the indicator buffers
+   SetIndexBuffer(0, prevDayCloseBuffer, INDICATOR_DATA);
+
+   // Set indicator label
+   string label = 'PrevDayClose (' + EnumToString(Timeframe) + ')';
+   IndicatorShortName(label);
+
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//|                         Custom functions                         |
+//|                                                                   |
+//+------------------------------------------------------------------+
+void DrawPrevDayClose()
+{
+   // Calculate the previous day's close price
+   datetime prevDay = iTime(_Symbol, Timeframe, 1);
+   double prevDayClose = iClose(_Symbol, Timeframe, 1);
+
+   // Draw a horizontal line at the previous day's close price
+   ObjectCreate(0, 'PrevDayCloseLine', OBJ_HLINE, 0, prevDay, prevDayClose);
+   ObjectSet(0, 'PrevDayCloseLine', OBJPROP_COLOR, Blue);
+   ObjectSet(0, 'PrevDayCloseLine', OBJPROP_WIDTH, 1);
+   ObjectSet(0, 'PrevDayCloseLine', OBJPROP_STYLE, STYLE_SOLID);
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//|                          Indicator start                         |
+//|                                                                   |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+   // Calculate the previous day's close price only once per day
+   if (prev_calculated == 0)
+   {
+      // Clear the buffer
+      ArrayInitialize(prevDayCloseBuffer, 0.0);
+
+      // Calculate the previous day's close price
+      datetime prevDay = iTime(_Symbol, Timeframe, 1);
+      double prevDayClose = iClose(_Symbol, Timeframe, 1);
+
+      // Store the previous day's close price in the buffer
+      prevDayCloseBuffer[0] = prevDayClose;
+
+      // Draw the previous day's close line
+      DrawPrevDayClose();
+   }
+
+   return(rates_total);
+}
